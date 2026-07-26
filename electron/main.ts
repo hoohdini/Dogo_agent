@@ -14,7 +14,12 @@ import { join } from "node:path";
 import { trayIconPng } from "./icon";
 import { loadEnv } from "./llm/env";
 import { streamChat } from "./llm/stream";
-import { captureSelection, isAccessibilityGranted, requestAccessibility } from "./selection";
+import {
+  captureSelection,
+  isAccessibilityGranted,
+  readClipboardText,
+  requestAccessibility,
+} from "./selection";
 import type { ChatStartPayload, ShownPayload } from "../shared/ipc";
 
 /**
@@ -94,6 +99,8 @@ async function showMadi(capture: boolean): Promise<void> {
   win.setIgnoreMouseEvents(true, { forward: true });
   const payload: ShownPayload = {
     selection,
+    // 드래그 캡처 실패 시 폴백: 클립보드 텍스트를 제안 (렌더러에서 버튼으로 명시 선택)
+    clipboardText: selection ? null : readClipboardText(),
     accessibilityGranted: isAccessibilityGranted(),
   };
   win.webContents.send("madi:shown", payload);

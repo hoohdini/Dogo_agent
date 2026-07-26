@@ -22,6 +22,7 @@ export function App(): React.JSX.Element {
   const [action, setAction] = useState<ActionDef | null>(null);
   const [chatPose, setChatPose] = useState<Pose>("idle");
   const [selection, setSelection] = useState<string | null>(null);
+  const [clipboardText, setClipboardText] = useState<string | null>(null);
   const [a11yGranted, setA11yGranted] = useState(true);
   const timers = useRef<number[]>([]);
   const dragging = useRef(false);
@@ -94,14 +95,18 @@ export function App(): React.JSX.Element {
     if (isElectron) {
       const off = window.madi!.onShown((payload) => {
         setSelection(payload.selection);
+        setClipboardText(payload.clipboardText);
         setA11yGranted(payload.accessibilityGranted);
         enter();
       });
       return off;
     }
-    // 데모: ?sel=텍스트 로 선택 텍스트 시뮬레이션
-    const demoSel = new URLSearchParams(location.search).get("sel");
+    // 데모: ?sel=텍스트(선택 캡처), ?clip=텍스트(클립보드 폴백) 시뮬레이션
+    const params = new URLSearchParams(location.search);
+    const demoSel = params.get("sel");
     if (demoSel) setSelection(demoSel);
+    const demoClip = params.get("clip");
+    if (demoClip) setClipboardText(demoClip);
     enter();
     return undefined;
   }, [enter]);
@@ -181,6 +186,18 @@ export function App(): React.JSX.Element {
                         {selection.length > 150 ? " …" : ""}
                       </pre>
                     </div>
+                  )}
+                  {!selection && clipboardText && (
+                    <button
+                      className="clipboard-suggest"
+                      onClick={() => setSelection(clipboardText)}
+                    >
+                      📋 클립보드 텍스트 가져오기 ({clipboardText.length.toLocaleString()}자)
+                      <span className="clipboard-peek">
+                        {clipboardText.slice(0, 60)}
+                        {clipboardText.length > 60 ? " …" : ""}
+                      </span>
+                    </button>
                   )}
                   <ul className="action-list">
                     {(selectionIsCode

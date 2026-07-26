@@ -35,8 +35,20 @@ export function requestAccessibility(): void {
 
 const MAX_SELECTION_CHARS = 8000;
 
+/** 폴백용: 현재 클립보드 텍스트 (사용자가 ⌘C로 직접 복사한 경우) */
+export function readClipboardText(): string | null {
+  const text = clipboard.readText().trim();
+  if (!text) return null;
+  return text.length > MAX_SELECTION_CHARS
+    ? `${text.slice(0, MAX_SELECTION_CHARS)}\n…(길어서 잘렸어요)`
+    : text;
+}
+
 export async function captureSelection(): Promise<string | null> {
-  if (!isAccessibilityGranted()) return null;
+  if (!isAccessibilityGranted()) {
+    console.log("[selection] 손쉬운 사용 권한 없음 → 드래그 캡처 생략");
+    return null;
+  }
 
   const previous = clipboard.readText();
   clipboard.clear();
@@ -55,7 +67,11 @@ export async function captureSelection(): Promise<string | null> {
       if (captured) break;
     }
 
-    if (!captured) return null;
+    if (!captured) {
+      console.log("[selection] 클립보드 변화 없음 (선택 없음이거나 Cmd+C 미전달)");
+      return null;
+    }
+    console.log(`[selection] 캡처 성공: ${captured.length}자`);
     if (captured.length > MAX_SELECTION_CHARS) {
       captured = `${captured.slice(0, MAX_SELECTION_CHARS)}\n…(길어서 잘렸어요)`;
     }
