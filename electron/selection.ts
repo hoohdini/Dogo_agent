@@ -13,14 +13,26 @@ import { execFile } from "node:child_process";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-function osascript(script: string): Promise<void> {
+function osascript(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile("osascript", ["-e", script], (error) => {
+    execFile("osascript", ["-e", script], (error, stdout) => {
       if (error) reject(error);
-      else resolve();
+      else resolve(stdout.trim());
     });
   });
 }
+
+/**
+ * ⌘C 시뮬레이트.
+ * keystroke "c"는 현재 입력 소스(한글이면 ㅊ)를 따라가 복사가 안 될 수 있어
+ * 물리 키 코드(8 = C키)를 사용한다. 진단용으로 대상(frontmost) 앱 이름을 반환.
+ */
+const COPY_SCRIPT = `
+tell application "System Events"
+  set frontApp to name of first application process whose frontmost is true
+  key code 8 using {command down}
+end tell
+return frontApp`;
 
 export function isAccessibilityGranted(): boolean {
   if (process.platform !== "darwin") return false;
@@ -64,7 +76,8 @@ export async function captureSelection(): Promise<string | null> {
         console.log("[selection] 1차 실패 → 재시도 (모디파이어 릴리즈 대기)");
         await sleep(300);
       }
-      await osascript('tell application "System Events" to keystroke "c" using {command down}');
+      const frontApp = await osascript(COPY_SCRIPT);
+      console.log(`[selection] ⌘C 전달 대상 앱: ${frontApp}`);
       // 클립보드 반영 대기 (최대 600ms)
       for (let i = 0; i < 12; i++) {
         await sleep(50);
