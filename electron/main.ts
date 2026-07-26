@@ -81,6 +81,9 @@ function showMadi(): void {
   repositionToCorner();
   win.show();
   win.focus();
+  // 기본은 클릭 통과 — 렌더러가 강아지/말풍선 위에 마우스가 올라오면 해제한다.
+  // forward: true라 통과 중에도 mousemove는 렌더러에 전달된다.
+  win.setIgnoreMouseEvents(true, { forward: true });
   win.webContents.send("madi:shown");
 }
 
@@ -132,6 +135,24 @@ if (!gotLock) {
 }
 
 ipcMain.on("madi:hide", hideMadi);
+
+// 누끼 클릭 통과: 투명 영역은 뒤 창으로, 강아지·말풍선 위에서만 이벤트 수신
+ipcMain.on("madi:set-ignore-mouse", (_event, ignore: boolean) => {
+  win?.setIgnoreMouseEvents(ignore, { forward: true });
+});
+
+// 강아지 드래그로 창 옮기기 (-webkit-app-region은 mouse 이벤트를 삼켜서 수동 구현)
+let dragOrigin: [number, number] | null = null;
+
+ipcMain.on("madi:drag-start", () => {
+  dragOrigin = win ? (win.getPosition() as [number, number]) : null;
+});
+
+ipcMain.on("madi:drag-move", (_event, delta: { dx: number; dy: number }) => {
+  if (win && dragOrigin) {
+    win.setPosition(Math.round(dragOrigin[0] + delta.dx), Math.round(dragOrigin[1] + delta.dy));
+  }
+});
 
 // ── 채팅 스트리밍 IPC ──────────────────────────────────────
 loadEnv();

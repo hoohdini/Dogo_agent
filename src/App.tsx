@@ -21,6 +21,40 @@ export function App(): React.JSX.Element {
   const [action, setAction] = useState<ActionDef | null>(null);
   const [chatPose, setChatPose] = useState<Pose>("idle");
   const timers = useRef<number[]>([]);
+  const dragging = useRef(false);
+
+  // 누끼 클릭 통과: 강아지·말풍선 위에서만 마우스 이벤트를 받는다
+  const solidProps = isElectron
+    ? {
+        onMouseEnter: () => window.madi!.setIgnoreMouse(false),
+        onMouseLeave: () => {
+          if (!dragging.current) window.madi!.setIgnoreMouse(true);
+        },
+      }
+    : {};
+
+  /** 강아지 드래그로 창 이동 (app-region: drag는 마우스 이벤트를 삼켜서 수동 구현) */
+  const onDogMouseDown = (e: React.MouseEvent): void => {
+    if (!isElectron) return;
+    e.preventDefault();
+    dragging.current = true;
+    const startX = e.screenX;
+    const startY = e.screenY;
+    window.madi!.dragStart();
+    const onMove = (ev: MouseEvent): void => {
+      window.madi!.dragMove(ev.screenX - startX, ev.screenY - startY);
+    };
+    const onUp = (ev: MouseEvent): void => {
+      dragging.current = false;
+      // 강아지 밖에서 놓았으면 다시 클릭 통과 상태로
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (!el?.closest(".dog-area, .bubble-slot")) window.madi!.setIgnoreMouse(true);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   const after = useCallback((ms: number, fn: () => void) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -102,7 +136,7 @@ export function App(): React.JSX.Element {
       )}
 
       <div className="stack">
-        <div className={`bubble-slot ${showBubble ? "visible" : ""}`}>
+        <div className={`bubble-slot ${showBubble ? "visible" : ""}`} {...solidProps}>
           {showBubble && (
             <SpeechBubble onClose={close} wide={stage === "chat"}>
               {stage === "greeting" ? (
@@ -141,7 +175,7 @@ export function App(): React.JSX.Element {
         </div>
 
         {stage !== "hidden" && (
-          <div className="dog-area">
+          <div className="dog-area" {...solidProps} onMouseDown={onDogMouseDown}>
             <div className={`dog ${stage === "entering" ? "dog-entering" : ""}`}>
               <Mascot pose={pose} />
             </div>

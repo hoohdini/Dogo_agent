@@ -6,6 +6,9 @@ declare global {
     madi?: {
       hide(): void;
       onShown(callback: () => void): () => void;
+      setIgnoreMouse(ignore: boolean): void;
+      dragStart(): void;
+      dragMove(dx: number, dy: number): void;
       chatStart(payload: ChatStartPayload): void;
       chatAbort(requestId: string): void;
       onChatEvent(callback: (event: ChatEvent) => void): () => void;

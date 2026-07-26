@@ -381,7 +381,11 @@ body.demo {
 
 .dog-area {
   position: relative;
-  -webkit-app-region: drag; /* 강아지를 잡고 창 이동 */
+  cursor: grab; /* 강아지를 잡고 창 이동 (수동 드래그) */
+}
+
+.dog-area:active {
+  cursor: grabbing;
 }
 
 .dog {

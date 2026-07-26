@@ -15,6 +15,17 @@ const api = {
       ipcRenderer.removeListener("madi:shown", listener);
     };
   },
+  /** true면 마우스 이벤트가 뒤 창으로 통과 (투명 영역), false면 이 창이 받음 */
+  setIgnoreMouse(ignore: boolean): void {
+    ipcRenderer.send("madi:set-ignore-mouse", ignore);
+  },
+  /** 강아지 드래그로 창 이동 */
+  dragStart(): void {
+    ipcRenderer.send("madi:drag-start");
+  },
+  dragMove(dx: number, dy: number): void {
+    ipcRenderer.send("madi:drag-move", { dx, dy });
+  },
   /** 채팅 스트리밍 시작 */
   chatStart(payload: ChatStartPayload): void {
     ipcRenderer.send("chat:start", payload);
