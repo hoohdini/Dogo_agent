@@ -54,17 +54,23 @@ export async function captureSelection(): Promise<string | null> {
   clipboard.clear();
 
   try {
-    // 사용자가 단축키(⌥Space)에서 손을 뗄 시간을 잠깐 준다 —
-    // ⌥가 눌린 채로 Cmd+C가 들어가면 다른 단축키가 될 수 있다.
-    await sleep(140);
-    await osascript('tell application "System Events" to keystroke "c" using {command down}');
+    // 사용자가 단축키(⌥Space)에서 손을 뗄 시간을 준다 —
+    // ⌥가 물리적으로 눌린 채 Cmd+C를 합성하면 ⌘⌥C가 되어 복사가 안 된다.
+    await sleep(350);
 
-    // 클립보드 반영 대기 (최대 500ms)
     let captured = "";
-    for (let i = 0; i < 10; i++) {
-      await sleep(50);
-      captured = clipboard.readText();
-      if (captured) break;
+    for (let attempt = 0; attempt < 2 && !captured; attempt++) {
+      if (attempt > 0) {
+        console.log("[selection] 1차 실패 → 재시도 (모디파이어 릴리즈 대기)");
+        await sleep(300);
+      }
+      await osascript('tell application "System Events" to keystroke "c" using {command down}');
+      // 클립보드 반영 대기 (최대 600ms)
+      for (let i = 0; i < 12; i++) {
+        await sleep(50);
+        captured = clipboard.readText();
+        if (captured) break;
+      }
     }
 
     if (!captured) {
