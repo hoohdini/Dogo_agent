@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "madi-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:web"],
+      "port": 5199
+    }
+  ]
+}
