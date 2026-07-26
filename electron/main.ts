@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   globalShortcut,
   ipcMain,
   Menu,
@@ -147,9 +148,15 @@ if (!gotLock) {
 
 ipcMain.on("madi:hide", hideMadi);
 
-// 손쉬운 사용 권한 요청: 시스템 프롬프트 + 설정 화면 열기
+// 손쉬운 사용 권한 요청: 시스템 프롬프트 + 설정 화면 열기.
+// 목록에 자동으로 안 뜨는 경우가 많아, + 버튼에서 바로 붙여넣을 수 있게
+// 실행 중인 앱 번들(.app) 경로를 클립보드에 복사해둔다.
 ipcMain.on("madi:request-accessibility", () => {
   requestAccessibility();
+  const appIndex = process.execPath.indexOf(".app/");
+  if (appIndex !== -1) {
+    clipboard.writeText(process.execPath.slice(0, appIndex + 4));
+  }
   void shell.openExternal(
     "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
   );
