@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { ChatEvent, ChatStartPayload } from "../shared/ipc";
+import type { ChatEvent, ChatStartPayload, ShownPayload } from "../shared/ipc";
 
 /** 렌더러에 노출하는 최소 API — window.madi */
 const api = {
@@ -7,13 +7,17 @@ const api = {
   hide(): void {
     ipcRenderer.send("madi:hide");
   },
-  /** 메인 프로세스가 창을 보여줄 때 알림 (등장 애니메이션 트리거) */
-  onShown(callback: () => void): () => void {
-    const listener = (): void => callback();
+  /** 메인 프로세스가 창을 보여줄 때 알림 — 캡처된 선택 텍스트·권한 상태 포함 */
+  onShown(callback: (payload: ShownPayload) => void): () => void {
+    const listener = (_e: unknown, payload: ShownPayload): void => callback(payload);
     ipcRenderer.on("madi:shown", listener);
     return () => {
       ipcRenderer.removeListener("madi:shown", listener);
     };
+  },
+  /** 손쉬운 사용 권한 요청 (시스템 설정 열기) */
+  requestAccessibility(): void {
+    ipcRenderer.send("madi:request-accessibility");
   },
   /** true면 마우스 이벤트가 뒤 창으로 통과 (투명 영역), false면 이 창이 받음 */
   setIgnoreMouse(ignore: boolean): void {

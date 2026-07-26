@@ -15,10 +15,13 @@ const isElectron = typeof window !== "undefined" && !!window.madi;
 
 export function ChatPanel({
   action,
+  initialText,
   onPoseChange,
   onBack,
 }: {
   action: ActionDef;
+  /** 호출 시 물고 온 선택 텍스트 — 지시가 있는 액션이면 즉시 실행, 자유 채팅이면 입력창에 프리필 */
+  initialText?: string | null;
   onPoseChange: (pose: Pose) => void;
   onBack: () => void;
 }): React.JSX.Element {
@@ -93,8 +96,8 @@ export function ChatPanel({
     return off;
   }, [appendDelta, finish, onPoseChange]);
 
-  const send = (): void => {
-    const text = input.trim();
+  const sendText = (raw: string): void => {
+    const text = raw.trim();
     if (!text || streaming) return;
 
     // 첫 메시지에는 액션 지시를 붙인다 (화면에는 입력 원문만 표시)
@@ -137,6 +140,18 @@ export function ChatPanel({
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...apiHistory.current],
     });
   };
+
+  const send = (): void => sendText(input);
+
+  // 물고 온 텍스트: 지시가 있는 액션(맞춤법 등)은 즉시 실행, 자유 채팅은 프리필만
+  const autoSent = useRef(false);
+  useEffect(() => {
+    if (!initialText || autoSent.current) return;
+    autoSent.current = true;
+    if (action.instruction) sendText(initialText);
+    else setInput(initialText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stop = (): void => {
     if (requestId.current) window.madi?.chatAbort(requestId.current);

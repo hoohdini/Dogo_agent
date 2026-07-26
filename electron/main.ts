@@ -6,13 +6,15 @@ import {
   Menu,
   nativeImage,
   screen,
+  shell,
   Tray,
 } from "electron";
 import { join } from "node:path";
 import { trayIconPng } from "./icon";
 import { loadEnv } from "./llm/env";
 import { streamChat } from "./llm/stream";
-import type { ChatStartPayload } from "../shared/ipc";
+import { captureSelection, isAccessibilityGranted, requestAccessibility } from "./selection";
+import type { ChatStartPayload, ShownPayload } from "../shared/ipc";
 
 /**
  * MADI 데스크톱 위젯 셸.
@@ -75,16 +77,25 @@ function repositionToCorner(): void {
   );
 }
 
-function showMadi(): void {
+/**
+ * MADI 호출. capture=true면 창을 띄우기 "전에" — 사용자가 보던 앱이
+ * 아직 앞에 있을 때 — 선택 텍스트를 캡처해서 함께 넘긴다.
+ */
+async function showMadi(capture: boolean): Promise<void> {
   if (!win) createWindow();
   if (!win) return;
+  const selection = capture ? await captureSelection() : null;
   repositionToCorner();
   win.show();
   win.focus();
   // 기본은 클릭 통과 — 렌더러가 강아지/말풍선 위에 마우스가 올라오면 해제한다.
   // forward: true라 통과 중에도 mousemove는 렌더러에 전달된다.
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.webContents.send("madi:shown");
+  const payload: ShownPayload = {
+    selection,
+    accessibilityGranted: isAccessibilityGranted(),
+  };
+  win.webContents.send("madi:shown", payload);
 }
 
 function hideMadi(): void {
@@ -93,7 +104,7 @@ function hideMadi(): void {
 
 function toggleMadi(): void {
   if (win?.isVisible()) hideMadi();
-  else showMadi();
+  else void showMadi(true);
 }
 
 function createTray(): void {
@@ -114,7 +125,7 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on("second-instance", showMadi);
+  app.on("second-instance", () => void showMadi(false));
 
   void app.whenReady().then(() => {
     // Dock 아이콘 없이 메뉴바 상주 앱으로 동작
@@ -129,12 +140,20 @@ if (!gotLock) {
 
     // 개발 편의: dev 모드에선 바로 보여준다
     if (process.env.ELECTRON_RENDERER_URL) {
-      win?.webContents.once("did-finish-load", showMadi);
+      win?.webContents.once("did-finish-load", () => void showMadi(false));
     }
   });
 }
 
 ipcMain.on("madi:hide", hideMadi);
+
+// 손쉬운 사용 권한 요청: 시스템 프롬프트 + 설정 화면 열기
+ipcMain.on("madi:request-accessibility", () => {
+  requestAccessibility();
+  void shell.openExternal(
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+  );
+});
 
 // 누끼 클릭 통과: 투명 영역은 뒤 창으로, 강아지·말풍선 위에서만 이벤트 수신
 ipcMain.on("madi:set-ignore-mouse", (_event, ignore: boolean) => {

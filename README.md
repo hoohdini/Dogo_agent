@@ -12,6 +12,8 @@ npm run dev                  # Electron 앱 실행 (메뉴바 상주)
 ```
 
 - **⌥ + Space** — MADI 부르기 / 숨기기 (전역 단축키)
+- **텍스트 드래그 → ⌥ + Space** — 어떤 앱에서든 선택한 텍스트를 강아지가 물고 옴
+  (최초 1회 시스템 설정 → 개인정보 보호 및 보안 → **손쉬운 사용**에서 Electron/MADI 허용 필요)
 - **메뉴바 발바닥 아이콘** — 부르기/숨기기, 종료
 - **Esc / 말풍선 ✕** — 숨기기
 - 강아지를 드래그하면 위치를 옮길 수 있어요
@@ -41,6 +43,7 @@ npm run typecheck
 electron/
   main.ts        # 창 관리(투명·항상 위·우하단), 트레이, 전역 단축키, 채팅 IPC
   preload.ts     # window.madi API (hide/onShown/chatStart/chatAbort/onChatEvent)
+  selection.ts   # 선택 텍스트 캡처 (Cmd+C 시뮬레이트 + 클립보드 복원)
   icon.ts        # 트레이 발바닥 아이콘 PNG를 코드로 생성
   llm/
     env.ts       # .env.local 로더
@@ -63,5 +66,5 @@ scripts/
 
 - [x] **Phase 1** — 위젯 셸 + 픽셀 강아지 + 말풍선 UI
 - [x] **Phase 2** — 국내 LLM 연동 (Solar Pro 2 · A.X-K1 · K-EXAONE · 믿:음 2.0 실배선, VARCO 대기), 스트리밍 채팅 + 액션별 모델 라우팅
-- [ ] **Phase 3** — 선택 텍스트 캡처(⌥+Space로 드래그한 텍스트 들고 등장), 코드/글 컨텍스트 감지
+- [x] **Phase 3** — 선택 텍스트 캡처(드래그 → ⌥+Space로 강아지가 물고 등장), 코드 감지 배지·액션 자동 실행, 손쉬운 사용 권한 안내
 - [ ] **Phase 4** — 우클릭 "MADI 부르기"(macOS 서비스), 히스토리, 설정, 자료조사

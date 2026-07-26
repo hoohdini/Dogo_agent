@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ACTIONS, type ActionDef } from "../shared/actions";
+import { looksLikeCode } from "../shared/detect";
 import { ChatPanel } from "./components/ChatPanel";
 import { Mascot, type Pose } from "./components/Mascot";
 import { SpeechBubble } from "./components/SpeechBubble";
@@ -20,8 +21,12 @@ export function App(): React.JSX.Element {
   const [stage, setStage] = useState<Stage>("hidden");
   const [action, setAction] = useState<ActionDef | null>(null);
   const [chatPose, setChatPose] = useState<Pose>("idle");
+  const [selection, setSelection] = useState<string | null>(null);
+  const [a11yGranted, setA11yGranted] = useState(true);
   const timers = useRef<number[]>([]);
   const dragging = useRef(false);
+
+  const selectionIsCode = selection ? looksLikeCode(selection) : false;
 
   // 누끼 클릭 통과: 강아지·말풍선 위에서만 마우스 이벤트를 받는다
   const solidProps = isElectron
@@ -80,15 +85,23 @@ export function App(): React.JSX.Element {
     clearTimers();
     setStage("hidden");
     setAction(null);
+    setSelection(null);
     window.madi?.hide();
   }, [clearTimers]);
 
-  // Electron: 메인 프로세스의 show 알림 → 등장. 브라우저 데모: 바로 등장.
+  // Electron: 메인 프로세스의 show 알림(선택 텍스트 포함) → 등장. 브라우저 데모: 바로 등장.
   useEffect(() => {
     if (isElectron) {
-      const off = window.madi!.onShown(() => enter());
+      const off = window.madi!.onShown((payload) => {
+        setSelection(payload.selection);
+        setA11yGranted(payload.accessibilityGranted);
+        enter();
+      });
       return off;
     }
+    // 데모: ?sel=텍스트 로 선택 텍스트 시뮬레이션
+    const demoSel = new URLSearchParams(location.search).get("sel");
+    if (demoSel) setSelection(demoSel);
     enter();
     return undefined;
   }, [enter]);
@@ -140,12 +153,42 @@ export function App(): React.JSX.Element {
           {showBubble && (
             <SpeechBubble onClose={close} wide={stage === "chat"}>
               {stage === "greeting" ? (
-                <p className="bubble-text">멍! 부르셨어요? 🐾</p>
+                <p className="bubble-text">
+                  {selection ? "멍! 텍스트를 물고 왔어요! 🐾" : "멍! 부르셨어요? 🐾"}
+                </p>
               ) : stage === "menu" ? (
                 <>
-                  <p className="bubble-title">무엇을 도와드릴까요?</p>
+                  <p className="bubble-title">
+                    {selection ? "이 텍스트, 어떻게 도와드릴까요?" : "무엇을 도와드릴까요?"}
+                  </p>
+                  {selection && (
+                    <div className="selection-preview">
+                      <div className="selection-meta">
+                        <span>
+                          📋 {selection.length.toLocaleString()}자
+                          {selectionIsCode && <span className="code-badge">코드</span>}
+                        </span>
+                        <button
+                          className="selection-clear"
+                          onClick={() => setSelection(null)}
+                          aria-label="가져온 텍스트 지우기"
+                        >
+                          지우기
+                        </button>
+                      </div>
+                      <pre className={selectionIsCode ? "mono" : ""}>
+                        {selection.slice(0, 150)}
+                        {selection.length > 150 ? " …" : ""}
+                      </pre>
+                    </div>
+                  )}
                   <ul className="action-list">
-                    {ACTIONS.map((a) => (
+                    {(selectionIsCode
+                      ? [...ACTIONS].sort((a, b) =>
+                          a.id === "explain" ? -1 : b.id === "explain" ? 1 : 0
+                        )
+                      : ACTIONS
+                    ).map((a) => (
                       <li key={a.id}>
                         <button className="action-chip" onClick={() => openAction(a)}>
                           <span className="chip-arrow">▸</span>
@@ -155,12 +198,23 @@ export function App(): React.JSX.Element {
                       </li>
                     ))}
                   </ul>
+                  {isElectron && !a11yGranted && (
+                    <button
+                      className="a11y-notice"
+                      onClick={() => window.madi!.requestAccessibility()}
+                    >
+                      🔒 드래그한 텍스트를 물고 오려면 손쉬운 사용 권한이 필요해요
+                      <br />
+                      <u>여기를 눌러 시스템 설정 열기</u>
+                    </button>
+                  )}
                 </>
               ) : (
                 action && (
                   <ChatPanel
                     key={action.id}
                     action={action}
+                    initialText={selection}
                     onPoseChange={setChatPose}
                     onBack={() => {
                       setStage("menu");
