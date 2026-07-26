@@ -10,5 +10,11 @@
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["electron/**/*.ts", "electron.vite.config.ts", "vite.web.config.ts"]
+  "include": [
+    "electron/**/*.ts",
+    "shared/**/*.ts",
+    "scripts/**/*.ts",
+    "electron.vite.config.ts",
+    "vite.web.config.ts"
+  ]
 }

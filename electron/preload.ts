@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { ChatEvent, ChatStartPayload } from "../shared/ipc";
 
 /** 렌더러에 노출하는 최소 API — window.madi */
 const api = {
@@ -12,6 +13,22 @@ const api = {
     ipcRenderer.on("madi:shown", listener);
     return () => {
       ipcRenderer.removeListener("madi:shown", listener);
+    };
+  },
+  /** 채팅 스트리밍 시작 */
+  chatStart(payload: ChatStartPayload): void {
+    ipcRenderer.send("chat:start", payload);
+  },
+  /** 진행 중인 요청 중단 */
+  chatAbort(requestId: string): void {
+    ipcRenderer.send("chat:abort", requestId);
+  },
+  /** 채팅 이벤트(delta/done/error) 구독 */
+  onChatEvent(callback: (event: ChatEvent) => void): () => void {
+    const listener = (_e: unknown, data: ChatEvent): void => callback(data);
+    ipcRenderer.on("chat:event", listener);
+    return () => {
+      ipcRenderer.removeListener("chat:event", listener);
     };
   },
 };

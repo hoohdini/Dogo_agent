@@ -10,6 +10,9 @@ import {
 } from "electron";
 import { join } from "node:path";
 import { trayIconPng } from "./icon";
+import { loadEnv } from "./llm/env";
+import { streamChat } from "./llm/stream";
+import type { ChatStartPayload } from "../shared/ipc";
 
 /**
  * MADI 데스크톱 위젯 셸.
@@ -17,8 +20,8 @@ import { trayIconPng } from "./icon";
  * - 평소엔 숨김, ⌥+Space(전역 단축키) 또는 메뉴바 아이콘으로 호출
  */
 
-const WINDOW_W = 420;
-const WINDOW_H = 500;
+const WINDOW_W = 440;
+const WINDOW_H = 620;
 const MARGIN = 16;
 const SHORTCUT = "Alt+Space";
 
@@ -129,6 +132,36 @@ if (!gotLock) {
 }
 
 ipcMain.on("madi:hide", hideMadi);
+
+// ── 채팅 스트리밍 IPC ──────────────────────────────────────
+loadEnv();
+
+const activeChats = new Map<string, () => void>();
+
+ipcMain.on("chat:start", (event, payload: ChatStartPayload) => {
+  const { requestId } = payload;
+  const send = (channel: string, data: unknown): void => {
+    if (!event.sender.isDestroyed()) event.sender.send(channel, data);
+  };
+  const cancel = streamChat(payload, {
+    onDelta: (text) => send("chat:event", { type: "delta", requestId, text }),
+    onDone: () => {
+      activeChats.delete(requestId);
+      send("chat:event", { type: "done", requestId });
+    },
+    onError: (message) => {
+      activeChats.delete(requestId);
+      console.error(`[chat/${payload.modelId}]`, message);
+      send("chat:event", { type: "error", requestId, message });
+    },
+  });
+  activeChats.set(requestId, cancel);
+});
+
+ipcMain.on("chat:abort", (_event, requestId: string) => {
+  activeChats.get(requestId)?.();
+  activeChats.delete(requestId);
+});
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();

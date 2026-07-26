@@ -209,6 +209,174 @@ body.demo {
   flex: 0 0 auto;
 }
 
+/* ── 채팅 패널 ───────────────────────────── */
+
+.bubble-wide {
+  width: 372px;
+  padding: 10px 12px;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed #d8d2b8;
+}
+
+.chat-back {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #1a1a1a;
+  border-radius: 6px;
+  background: #ffd94a;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.chat-back:hover {
+  background: #f3c93a;
+}
+
+.chat-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #14247a;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.model-select {
+  max-width: 128px;
+  padding: 3px 4px;
+  border: 2px solid #1a1a1a;
+  border-radius: 6px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.chat-messages {
+  height: 296px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #d8d2b8;
+  border-radius: 4px;
+}
+
+.chat-empty {
+  margin: auto;
+  font-size: 12px;
+  color: #9a9377;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.msg {
+  max-width: 86%;
+  padding: 7px 10px;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.msg-user {
+  align-self: flex-end;
+  background: #ffe9a8;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.msg-assistant {
+  align-self: flex-start;
+  background: #fff;
+  box-shadow: -2px 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.msg-error {
+  align-self: center;
+  background: #ffe1dd;
+  border-color: #a33327;
+  color: #7c241a;
+  font-size: 12px;
+}
+
+.cursor-blink {
+  animation: blink-cursor 0.8s steps(2) infinite;
+}
+
+@keyframes blink-cursor {
+  to {
+    visibility: hidden;
+  }
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.chat-input-row textarea {
+  flex: 1;
+  resize: none;
+  padding: 7px 9px;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.chat-input-row textarea:focus {
+  outline: 2px solid #4a76e8;
+  outline-offset: -1px;
+}
+
+.chat-send {
+  width: 38px;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #52c766 0%, #2ea344 100%);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.chat-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.chat-send.stop {
+  background: linear-gradient(180deg, #e86a5a 0%, #c73a2a 100%);
+}
+
 /* ── 강아지 ──────────────────────────────── */
 
 .dog-area {

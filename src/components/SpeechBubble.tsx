@@ -4,12 +4,15 @@ import type { ReactNode } from "react";
 export function SpeechBubble({
   children,
   onClose,
+  wide = false,
 }: {
   children: ReactNode;
   onClose?: () => void;
+  /** 채팅 패널용 넓은 변형 */
+  wide?: boolean;
 }): React.JSX.Element {
   return (
-    <div className="bubble">
+    <div className={`bubble ${wide ? "bubble-wide" : ""}`}>
       {onClose && (
         <button className="bubble-close" onClick={onClose} aria-label="닫기">
           ✕
